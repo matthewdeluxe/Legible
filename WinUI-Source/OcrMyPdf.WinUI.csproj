@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup>
+  <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows10.0.22621.0</TargetFramework><WindowsSdkPackageVersion>10.0.22621.57</WindowsSdkPackageVersion>
+  <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion><UseWinUI>true</UseWinUI>
+  <WindowsPackageType>None</WindowsPackageType><WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+  <SelfContained>true</SelfContained><RuntimeIdentifier>win-x64</RuntimeIdentifier><PlatformTarget>x64</PlatformTarget>
+  <Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><ApplicationManifest>app.manifest</ApplicationManifest><ApplicationIcon>Assets\OcrMyPdf.ico</ApplicationIcon>
+ </PropertyGroup>
+ <ItemGroup><PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" /><PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" /></ItemGroup>
+ <ItemGroup><Content Include="Assets\OcrMyPdf.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
+ <Target Name="PublishWinUIResources" AfterTargets="Publish">
+  <ItemGroup><WinUIResource Include="$(OutputPath)*.pri;$(OutputPath)*.xbf" /></ItemGroup>
+  <Copy SourceFiles="@(WinUIResource)" DestinationFolder="$(PublishDir)" />
+ </Target>
+</Project>
