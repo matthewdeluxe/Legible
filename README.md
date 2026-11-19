@@ -1,68 +1,87 @@
-# OCRmyPDF GUI
+# Legible
 
-Windows desktop front ends for [OCRmyPDF](https://github.com/ocrmypdf/OCRmyPDF). Queue PDFs or whole folders, choose options, and get searchable PDFs back. All processing runs locally; nothing is uploaded anywhere.
+Make scanned PDFs searchable on Windows. Queue PDFs or whole folders, and get back PDFs with an invisible text layer you can search, select and copy. Everything runs locally; nothing is uploaded anywhere.
+
+Legible is a single self-contained folder. There is nothing else to install: no Python, Ghostscript, Tesseract install or Visual C++ redistributable.
 
 | Component | What it is |
 | --- | --- |
-| `WinUI-Source/` | Native C# WinUI 3 app (recommended). |
-| `ocrmypdf_gui.pyw` | Original Tkinter app (legacy, still works). |
-| `Setup-OcrMyPdfGui.ps1` | Installs the OCR dependencies on a fresh Windows machine. |
+| `src/Legible.App/` | The WinUI 3 desktop app. |
+| `src/Legible.Core/` | The OCR engine (C# library) the app uses. |
+| `src/Legible.Cli/` | A small command-line front end to the same engine. |
+| `Build.ps1` | Builds the app into `Legible-App/`. |
 
-Both apps are front ends only. OCRmyPDF, Tesseract and Ghostscript are separate installs, and the setup script handles them.
+## How it works
+
+For each page that needs OCR, Legible renders the page with PDFium, detects sideways or upside-down pages and small skew, recognizes the text with Tesseract, and lays Tesseract's invisible text over the original page. The original page content is not touched (except in Force OCR mode, below), so image quality and file contents stay as they were.
+
+Built on: [Tesseract](https://github.com/tesseract-ocr/tesseract) via the [Tesseract .NET wrapper](https://github.com/charlesw/tesseract) (Apache-2.0), [PDFium](https://pdfium.googlesource.com/pdfium/) via [PDFtoImage](https://github.com/sungaila/PDFtoImage) (MIT), [PDFsharp](https://github.com/empira/PDFsharp) 6.2 (MIT) and [PdfPig](https://github.com/UglyToad/PdfPig) (Apache-2.0).
 
 ## Features
 
-- Add files, add a folder (subfolders included), paste a list of paths, or pass PDFs as command line arguments (WinUI app).
+- Add files, add a folder (subfolders included), paste a list of paths, or pass PDFs as command-line arguments.
 - Output beside each original or into a chosen folder, with a configurable filename suffix (default `_ocr`).
-- Replace-originals mode with a confirmation on every batch. The WinUI app keeps a `.pdf.bak` copy of each original by default.
-- Text handling modes: skip pages that already have text, force OCR on every page, redo existing OCR, or strict (fail if text exists).
-- Options: deskew, auto-rotate, clean with unpaper (before OCR or in the final output), background removal, PDF/A output, optimization level 0 to 3, and free-form extra arguments.
-- Live log with save to file, per-batch success and failure counts, and a Cancel button that stops OCRmyPDF and its child processes.
-- Settings are remembered between runs.
+- Replace-originals mode with a confirmation on every batch, keeping a `.pdf.bak` copy of each original by default.
+- Text handling modes:
+  - **Skip** pages that already have text (default).
+  - **Force OCR** on every page. Each page is replaced by an image of itself plus OCR text, so existing text and vector content become part of the image.
+  - **Redo OCR**: replace text layers that Legible added earlier; pages with other text are skipped.
+  - **Strict**: fail if any page already has text.
+- Auto-rotate sideways and upside-down pages (sets the page rotation; the content is not resampled).
+- Deskew. In Force OCR mode the page is visibly straightened; otherwise the text layer follows the skew so selection still lines up.
+- Pages are OCR'd in parallel. Live log with save to file, per-batch success and failure counts, and Cancel.
+- Settings are remembered between runs. Settings from the earlier OCRmyPDF front end are picked up on first run.
 
-The WinUI app OCRs in English (`-l eng`). The Python app lets you pick any installed Tesseract languages.
+OCR language is English.
 
-## Requirements
+## Build
 
-- Windows 10 1809 or later, x64.
-- OCRmyPDF, Tesseract and Ghostscript. Optional: unpaper (needed for the Clean options), pngquant and jbig2 (smaller output at higher optimization levels).
-- To build the WinUI app: the .NET 10 SDK.
+Requirements: Windows 10 1809 or later (x64) and the .NET 10 SDK (or newer).
 
-## Setup
+```powershell
+powershell -ExecutionPolicy Bypass -File Build.ps1
+```
 
-1. Run `Setup-OcrMyPdfGui.ps1` (right-click, Run with PowerShell). It installs Scoop, Python, Ghostscript, Tesseract with language packs, pngquant, unpaper (through MSYS2) and OCRmyPDF, fixes the `TESSDATA_PREFIX` setting that the Tesseract language package breaks, and creates a desktop shortcut for the Python app.
-   - Add `-BuildJbig2` to also compile the optional jbig2enc compressor. It needs a large MSYS2 toolchain and only shrinks scanned black-and-white output.
-   - Scoop must be installed as a normal (non-administrator) user.
-2. For the WinUI app, install the .NET 10 SDK and run `WinUI-Source/Build.ps1`. Output goes to `WinUI-App/` (about 230 MB including the bundled runtime). Pass `-OutputDirectory` to build somewhere else, for example outside OneDrive.
-3. Run `WinUI-App/OcrMyPdf.WinUI.exe`, or start the Python app with `pythonw ocrmypdf_gui.pyw`.
+The first build downloads the English model, the orientation model and Tesseract's glyphless PDF font into `tessdata/` (about 15 MB), and copies the Visual C++ runtime DLLs from the build machine into `vcruntime/` for app-local deployment. Output goes to `Legible-App/` (about 280 MB including the .NET and Windows App SDK runtimes). Pass `-OutputDirectory` to build somewhere else.
 
-## Using the WinUI app
+Run `Legible-App\Legible.exe`. To share a build, zip the whole `Legible-App` folder.
 
-1. **Files & output:** add your PDFs, choose an output folder (blank saves beside each original) and a suffix.
-2. **OCR settings:** pick the text handling mode and options. Defaults are skip-text, deskew, auto-rotate and PDF/A at optimization level 1.
-3. Select **Run OCR**. Progress and OCRmyPDF output appear on the **Log & results** tab, and **Open output folder** is enabled when a job succeeds.
+> Keep the repository and output in a short path (for example `C:\src\legible`). The WinUI XAML compiler and native DLL loading fail when paths pass Windows' 260-character limit.
+
+### Command line
+
+```powershell
+dotnet run --project src/Legible.Cli -- input.pdf output.pdf
+dotnet run --project src/Legible.Cli -- --mode force --no-deskew input.pdf output.pdf
+```
+
+Run with `--help` for all options (`--mode`, `--no-rotate`, `--lang`, `--jobs`, `--dpi`, `--tessdata`).
 
 ## Safety notes
 
-- Each job writes to a temporary file and moves it into place only after OCRmyPDF succeeds. Failed or cancelled jobs leave originals untouched.
+- Each job writes to a temporary file and moves it into place only after it succeeds. Failed or cancelled jobs leave originals untouched.
 - Existing output files and duplicate output names are rejected rather than overwritten.
-- `--force-ocr` and PDF/A output can change a document more than plain OCR does. Try new settings on copies first.
-- Settings are stored in `%LOCALAPPDATA%\OCRmyPDF WinUI\settings.json` (WinUI) and `%LOCALAPPDATA%\OCRmyPDF GUI\settings.json` (Python). Replace mode always starts off.
+- Force OCR changes a document more than plain OCR does. Try new settings on copies first.
+- Settings are stored in `%LOCALAPPDATA%\Legible\settings.json`. Replace mode always starts off.
+
+## Not included (compared with OCRmyPDF)
+
+- PDF/A output.
+- Output size optimization (pngquant, jbig2). Force OCR output can be larger than the input.
+- unpaper cleaning and background removal.
+- Languages other than English. Adding one is a matter of dropping its `.traineddata` into `tessdata/` and exposing a language setting.
 
 ## Troubleshooting
 
 | Symptom | Likely cause and fix |
 | --- | --- |
-| "OCRmyPDF executable not found" | Set the full path on the OCR settings tab, for example `...\scoop\apps\python\current\Scripts\ocrmypdf.exe`. |
-| Clean options fail | unpaper is not installed or not on PATH. Re-run the setup script. |
-| Tesseract reports it can't open `hocr` or config files | `TESSDATA_PREFIX` points at a folder with no `configs`. Re-run the setup script, which repairs it. |
-| WinUI app won't start | Check for `startup-error.txt` next to the exe, and keep the whole `WinUI-App` folder together. |
-| Non-English text is poorly recognized | The WinUI app is fixed to English. Use the Python app, which lets you select other installed languages. |
+| App won't start | Check for `startup-error.txt` next to the exe, and keep the whole `Legible-App` folder together. |
+| "Missing OCR data" | The `tessdata` folder next to the exe is missing files. Rebuild, or copy it from another build. |
+| Build fails with "Xaml compiler error" or "Input JSON file doesn't exist" | The path is too long. Move the repository to a short path. |
+| Build fails with "Could not resolve SDK Microsoft.NET.Sdk" | A stale `MSBuildSDKsPath` environment variable points at a removed SDK. `Build.ps1` ignores it; for other builds, remove the variable. |
 
-## Repository notes
+## Licensing
 
-`WinUI-App/` (build output) and `__pycache__/` are git-ignored. Rebuild the app with `Build.ps1` instead of committing binaries; if you want to share a build, attach a zip to a GitHub Release.
+Legible is MIT licensed. See `LICENSE`.
 
-## License
-
-MIT. See `LICENSE`.
+PDFsharp is pinned to 6.2.4, the last MIT release; PDFsharp 6.5 and later are AGPL-3.0, so do not upgrade it without reviewing the license. Bundled OCR data and Tesseract are Apache-2.0. The Visual C++ runtime DLLs are redistributed under Microsoft's Visual C++ redistributable terms.

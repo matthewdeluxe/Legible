@@ -1,5 +1,5 @@
 using Microsoft.UI.Xaml;
-namespace OcrMyPdf.WinUI;
+namespace Legible;
 public partial class App : Application
 {
  private MainWindow? window;
