@@ -80,7 +80,7 @@ try
 catch (OperationCanceledException) { Console.Error.WriteLine("Cancelled."); return 130; }
 catch (Exception ex)
 {
-    Console.Error.WriteLine("Error: " + ex.GetBaseException().Message);
+    Console.Error.WriteLine("Error: " + (ex is OcrException ? ex.Message : ex.GetBaseException().Message));
     if (Environment.GetEnvironmentVariable("LEGIBLE_DEBUG") == "1") Console.Error.WriteLine(ex);
     return 1;
 }

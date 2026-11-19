@@ -86,7 +86,7 @@ public static partial class PdfOcr
                         {
                             ct.ThrowIfCancellationRequested();
                             try { results[i] = OcrPage(pdfBytes, i, options, engines, temp.FullName, force); }
-                            catch (Exception ex) when (ex is not OperationCanceledException) { throw new OcrException($"Page {i + 1}: {ex.Message}", ex); }
+                            catch (Exception ex) when (ex is not OperationCanceledException) { throw new OcrException($"Page {i + 1}: {ex.GetBaseException().Message}", ex); }
                             var r = results[i]!;
                             var notes = (r.Turn != 0 ? $", rotated {r.Turn}°" : "") + (r.SkewDegrees != 0 ? $", deskewed {r.SkewDegrees:0.0}°" : "");
                             log?.Report($"Page {i + 1}: OCR done ({Interlocked.Increment(ref done)}/{todo.Count}{notes})");
@@ -97,7 +97,7 @@ public static partial class PdfOcr
                 catch (AggregateException ae) when (ae.InnerExceptions.Count > 0)
                 {
                     var first = ae.InnerExceptions.FirstOrDefault(e => e is not OperationCanceledException) ?? ae.InnerExceptions[0];
-                    throw first is OcrException or OperationCanceledException ? first : new OcrException(first.Message, first);
+                    throw first is OcrException or OperationCanceledException ? first : new OcrException(first.GetBaseException().Message, first);
                 }
 
                 int rotated = 0;

@@ -121,7 +121,7 @@ public sealed class MainWindow : Window
      if (replace) File.Replace(temporary, job.Output, backup.IsChecked == true ? job.Output + ".bak" : null); else File.Move(temporary, job.Output, false); succeeded++; lastFolder = Path.GetDirectoryName(job.Output); Append("Saved: " + job.Output);
     }
     catch (OperationCanceledException) { break; }
-    catch (Exception ex) { if (token.IsCancellationRequested) break; failed++; Append("FAILED: " + ex.GetBaseException().Message); }
+    catch (Exception ex) { if (token.IsCancellationRequested) break; failed++; Append("FAILED: " + (ex is OcrException ? ex.Message : ex.GetBaseException().Message)); }
     finally { try { if (File.Exists(temporary)) File.Delete(temporary); } catch (Exception ex) { Append("Temporary file cleanup: " + ex.Message); } }
     progress.Value = ++completed;
    }
