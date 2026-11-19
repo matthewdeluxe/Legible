@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>Legible.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+    <!-- 6.2.4 is the last MIT release; 6.5+ is AGPL-3.0. Do not upgrade without a license review. -->
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="PDFtoImage" Version="5.4.0" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
+    <!-- Pinned above the vulnerable 8.0.1 that PDFsharp references. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" />
+  </ItemGroup>
+  <!-- OCR language data and the glyphless font used for the invisible text layer.
+       Build.ps1 downloads these into the repo's tessdata folder. -->
+  <ItemGroup>
+    <None Include="..\..\tessdata\*.traineddata;..\..\tessdata\pdf.ttf" Link="tessdata\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- App-local Visual C++ runtime so Tesseract's native DLLs load without the redistributable installed. -->
+    <None Include="..\..\vcruntime\*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

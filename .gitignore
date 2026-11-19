@@ -1,9 +1,11 @@
-# Built output (rebuild with WinUI-Source/Build.ps1)
-WinUI-App/
+# Built output (rebuild with Build.ps1)
+Legible-App/
 
-# Python / .NET build artifacts
-__pycache__/
-*.pyc
+# Downloaded or copied by Build.ps1
+tessdata/
+vcruntime/
+
+# .NET build artifacts
 bin/
 obj/
 
